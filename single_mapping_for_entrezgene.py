@@ -13,11 +13,11 @@ def find_multiple_mappings_from_entrezgene_file(gene_ensembl_entrezgene_dm_file)
     """Input gene_ensembl_entrezgene_dm_file, and identify how many NCBI gene IDs there are for
     each ensembl gene ID. Lines in input file are:
 
-    gene_ensembl__xref_entrezgene__dm.txt (input_file):
+    'gene_ensembl__xref_entrezgene__dm.txt' (useful columns in input_file):
 
-    col0: "taxonomy id":  taxonomy_id
-    col1: "ensembl gene id": gene_stable_id
-    col2: "ncbi gene id": dbprimary_id
+    col1: Ensembl gene ID
+    col2: NCBI gene ID
+
     If there is > 1 NCBI gene ID, we need to process further.
     """
     ensembl_dict_from_entrez = defaultdict(list)
@@ -41,9 +41,10 @@ def create_ensembl_gene_id_dict(gene_ensembl_main_file, multi_mapping_dict):
     """Using gene_ensembl_main_file, identify correct ensembl symbol for each
     ensembl gene ID. Add this information to a new dictionary.
 
-    gene_ensembl__gene__main.txt (input file):
-    col1: ensembl gene ID
-    col2: ensembl symbol
+    'gene_ensembl__gene__main.txt' (useful columns in input file):
+
+    col1: Ensembl gene ID
+    col2: Ensembl symbol
     """
     ensembl_dict = defaultdict(list)
     symbol_file_list = []
@@ -65,11 +66,14 @@ def create_ensembl_gene_id_dict(gene_ensembl_main_file, multi_mapping_dict):
 
 
 def find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl_file):
-    """Input is gene2ensembl_file, which maps one NCBI gene ID to one Ensembl
-    gene ID.
+    """Input is gene2ensembl_file; maps one NCBI gene ID to one Ensembl gene ID.
+
+    'gene2ensembl' (useful columns in input file):
+
+    col1: NCBI gene ID
+    col2: Ensembl gene ID
     """
     with open(gene2ensembl_file) as file_in:
-        # (TODO) double check source files that Chunlei gave to me for headers (NEXT) TODO
         next(file_in)
 
         for line in file_in:
@@ -80,8 +84,6 @@ def find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl_file):
 
             if ensembl_id_from_gene2ensembl in ensembl_dict:
                 ensembl_dict[ensembl_id_from_gene2ensembl]['data']['gene2ensembl'].append(ncbi_gene_id_from_gene2ensembl)
-
-    print(len(ensembl_dict), "LEN of Ensembl dict")
 
     return ensembl_dict
 
@@ -94,7 +96,7 @@ def write_mapping_ids_to_file(ensembl_dict):
     """
     mg = mygene.MyGeneInfo()
 
-    mapping_file = open("final_mapping_file.txt", "w")
+    final_mapping_file = open("final_mapping_file.txt", "w")
     ncbi_list_for_mygene_querymany = []
     ncbi_list_for_mygene_querymany2 = []
 
@@ -104,8 +106,8 @@ def write_mapping_ids_to_file(ensembl_dict):
         gene2ensembl_match_list = ensembl_dict[key]['data']['gene2ensembl']
         ncbi_list_for_mygene_querymany.append(ncbi_list)
         if len(gene2ensembl_match_list) == 1:
-            mapping_file.write(key + '\t')
-            mapping_file.write(gene2ensembl_match_list[0] + '\n')
+            final_mapping_file.write(key + '\t')
+            final_mapping_file.write(gene2ensembl_match_list[0] + '\n')
         else:
             # only append list if need to query mygene.info
             ncbi_list_for_mygene_querymany.append(ncbi_list)
@@ -140,10 +142,10 @@ def write_mapping_ids_to_file(ensembl_dict):
 
             if ensembl_symbol in ensembl_symbol_list_from_mygene:
                 if ensembl_symbol_list_from_mygene.count(ensembl_symbol) == 1:
-                    mapping_file.write(key + '\t')
+                    final_mapping_file.write(key + '\t')
                     ncbi_idx = ensembl_symbol_list_from_mygene.index(ensembl_symbol)
-                    mapping_file.write('\t' + ncbi_list[ncbi_idx] + '\n')
-    mapping_file.close()
+                    final_mapping_file.write('\t' + ncbi_list[ncbi_idx] + '\n')
+    final_mapping_file.close()
 
 
 # Call all the functions above in order:
