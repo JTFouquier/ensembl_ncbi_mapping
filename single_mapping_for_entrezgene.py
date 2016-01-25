@@ -9,19 +9,22 @@ from collections import defaultdict
 from collections import Counter
 
 
-def find_multiple_mappings_from_entrezgene_file(entrezgene_file):
-    """Input entrezgene_file, and identify how many NCBI gene IDs there are for
+def find_multiple_mappings_from_entrezgene_file(gene_ensembl_entrezgene_dm_file):
+    """Input gene_ensembl_entrezgene_dm_file, and identify how many NCBI gene IDs there are for
     each ensembl gene ID. Lines in input file are:
-    "taxonomy id":  taxonomy_id
-    "ensembl gene id": gene_stable_id
-    "ncbi gene id": dbprimary_id
+
+    gene_ensembl__xref_entrezgene__dm.txt (input_file):
+
+    col0: "taxonomy id":  taxonomy_id
+    col1: "ensembl gene id": gene_stable_id
+    col2: "ncbi gene id": dbprimary_id
     If there is > 1 NCBI gene ID, we need to process further.
     """
     ensembl_dict_from_entrez = defaultdict(list)
 
-    with open(entrezgene_file) as fin:
-        next(fin)
-        for line in fin:
+    with open(gene_ensembl_entrezgene_dm_file) as file_in:
+        next(file_in)
+        for line in file_in:
             split_line = re.split("\t", line)
             ensembl_gene_id_from_entrez = split_line[1].strip()
             ncbi_gene_id_from_entrez = split_line[2].strip()
@@ -37,14 +40,16 @@ def find_multiple_mappings_from_entrezgene_file(entrezgene_file):
 def create_ensembl_gene_id_dict(gene_ensembl_main_file, multi_mapping_dict):
     """Using gene_ensembl_main_file, identify correct ensembl symbol for each
     ensembl gene ID. Add this information to a new dictionary.
-    add details (TODO)
+
+    gene_ensembl__gene__main.txt (input file):
+    col1: ensembl gene ID
+    col2: ensembl symbol
     """
-    # (TODO)
     ensembl_dict = defaultdict(list)
     symbol_file_list = []
-    with open(gene_ensembl_main_file) as fin:
-        next(fin)
-        for line in fin:
+    with open(gene_ensembl_main_file) as file_in:
+        next(file_in)
+        for line in file_in:
             split_line = re.split("\t", line)
             ensembl_id_from_main = str(split_line[1].strip())
             ensembl_symbol_from_main = split_line[2].strip()
@@ -63,11 +68,11 @@ def find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl_file):
     """Input is gene2ensembl_file, which maps one NCBI gene ID to one Ensembl
     gene ID.
     """
-    with open(gene2ensembl_file) as gene2ensembl:
+    with open(gene2ensembl_file) as file_in:
         # (TODO) double check source files that Chunlei gave to me for headers (NEXT) TODO
-        next(gene2ensembl)
+        next(file_in)
 
-        for line in gene2ensembl:
+        for line in file_in:
             splitline = line.split("\t")
 
             ensembl_id_from_gene2ensembl = splitline[2].strip()
