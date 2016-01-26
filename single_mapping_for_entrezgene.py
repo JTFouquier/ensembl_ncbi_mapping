@@ -92,7 +92,6 @@ def write_mapping_ids_to_file(ensembl_dict):
     ID from the NCBI multi mapping list returns the same ensembl symbol as the
     ensembl main file, and use corresponding NCBI gene ID as single match.
     """
-
     final_mapping_file = open("final_mapping_file.txt", "w")
     ncbi_list_for_mygene_querymany = []
     ncbi_list_for_mygene_querymany2 = []
@@ -150,5 +149,5 @@ def write_mapping_ids_to_file(ensembl_dict):
 # Call all the functions above in order:
 multi_mapping_dict = find_multiple_mappings_from_entrezgene_file("gene_ensembl__xref_entrezgene__dm.txt")
 ensembl_dict = create_ensembl_gene_id_dict("gene_ensembl__gene__main.txt", multi_mapping_dict)
-ensembl_dict = find_ncbi_ids_from_gene2ensembl(ensembl_dict, "gene2ensembl")
-write_mapping_ids_to_file(ensembl_dict)
+ensembl_dict_appended = find_ncbi_ids_from_gene2ensembl(ensembl_dict, "gene2ensembl")
+write_mapping_ids_to_file(ensembl_dict_appended)
