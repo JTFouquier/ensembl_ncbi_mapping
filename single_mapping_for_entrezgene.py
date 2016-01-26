@@ -91,6 +91,16 @@ def write_mapping_ids_to_file(ensembl_dict):
     Next, if no gene2ensembl match, then look at mygene.info to find which NCBI
     ID from the NCBI multi mapping list returns the same ensembl symbol as the
     ensembl main file, and use corresponding NCBI gene ID as single match.
+
+    OUTPUT (is mapping file):
+    -------------------------
+    col0: Ensembl gene ID
+    col1: NCBI ID gene ID from gene2ensembl
+    col2: NCBI ID gene ID from ncbi_list if mygene.info symbol == ensembl symbol
+        (i.e. iterate through ncbi list (for each Ensembl ID) on mygene.info
+        ( http://mygene.info/v2/gene/100894237?fields=symbol )
+        and when the symbol found matches the ensembl symbol use this
+        NCBI ID if symbols match only once)
     """
     final_mapping_file = open("final_mapping_file.txt", "w")
     ncbi_list_for_mygene_querymany = []
