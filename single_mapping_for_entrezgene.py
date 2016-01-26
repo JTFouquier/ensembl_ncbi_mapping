@@ -1,5 +1,4 @@
 
-import re
 import ast
 import collections
 
@@ -25,7 +24,7 @@ def find_multiple_mappings_from_entrezgene_file(gene_ensembl_entrezgene_dm_file)
     with open(gene_ensembl_entrezgene_dm_file) as file_in:
         next(file_in)
         for line in file_in:
-            split_line = re.split("\t", line)
+            split_line = line.split("\t")
             ensembl_gene_id_from_entrez = split_line[1].strip()
             ncbi_gene_id_from_entrez = split_line[2].strip()
             ensembl_dict_from_entrez[ensembl_gene_id_from_entrez].append(ncbi_gene_id_from_entrez)
@@ -51,7 +50,7 @@ def create_ensembl_gene_id_dict(gene_ensembl_main_file, multi_mapping_dict):
     with open(gene_ensembl_main_file) as file_in:
         next(file_in)
         for line in file_in:
-            split_line = re.split("\t", line)
+            split_line = line.split("\t")
             ensembl_id_from_main = str(split_line[1].strip())
             ensembl_symbol_from_main = split_line[2].strip()
 
@@ -77,10 +76,9 @@ def find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl_file):
         next(file_in)
 
         for line in file_in:
-            splitline = line.split("\t")
-
-            ensembl_id_from_gene2ensembl = splitline[2].strip()
-            ncbi_gene_id_from_gene2ensembl = splitline[1].strip()
+            split_line = line.split("\t")
+            ensembl_id_from_gene2ensembl = split_line[2].strip()
+            ncbi_gene_id_from_gene2ensembl = split_line[1].strip()
 
             if ensembl_id_from_gene2ensembl in ensembl_dict:
                 ensembl_dict[ensembl_id_from_gene2ensembl]['data']['gene2ensembl'].append(ncbi_gene_id_from_gene2ensembl)
@@ -103,11 +101,11 @@ def write_mapping_ids_to_file(ensembl_dict):
     for key in ensembl_dict:
         ncbi_list = ensembl_dict[key]['data']['ncbi_list']
         ensembl_symbol = ensembl_dict[key]['data']['symbol'].upper()
-        gene2ensembl_match_list = ensembl_dict[key]['data']['gene2ensembl']
+        gene2ensembl_ncbi_gene_id_match_list = ensembl_dict[key]['data']['gene2ensembl']
         ncbi_list_for_mygene_querymany.append(ncbi_list)
-        if len(gene2ensembl_match_list) == 1:
+        if len(gene2ensembl_ncbi_gene_id_match_list) == 1:
             final_mapping_file.write(key + '\t')
-            final_mapping_file.write(gene2ensembl_match_list[0] + '\n')
+            final_mapping_file.write(gene2ensembl_ncbi_gene_id_match_list[0] + '\n')
         else:
             # only append list if need to query mygene.info
             ncbi_list_for_mygene_querymany.append(ncbi_list)
@@ -129,8 +127,8 @@ def write_mapping_ids_to_file(ensembl_dict):
     for key in ensembl_dict:
         ncbi_list = ensembl_dict[key]['data']['ncbi_list']
         ensembl_symbol = ensembl_dict[key]['data']['symbol'].upper()
-        gene2ensembl_match_list = ensembl_dict[key]['data']['gene2ensembl']
-        if len(gene2ensembl_match_list) != 1:
+        gene2ensembl_ncbi_gene_id_match_list = ensembl_dict[key]['data']['gene2ensembl']
+        if len(gene2ensembl_ncbi_gene_id_match_list) != 1:
 
             ensembl_symbol_list_from_mygene = []
             for ncbi_id in ncbi_list:
