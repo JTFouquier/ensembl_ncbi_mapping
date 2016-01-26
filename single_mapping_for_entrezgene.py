@@ -77,11 +77,11 @@ def find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl_file):
 
         for line in file_in:
             split_line = line.split("\t")
-            ensembl_id_from_gene2ensembl = split_line[2].strip()
+            ensembl_gene_id_from_gene2ensembl = split_line[2].strip()
             ncbi_gene_id_from_gene2ensembl = split_line[1].strip()
 
-            if ensembl_id_from_gene2ensembl in ensembl_dict:
-                ensembl_dict[ensembl_id_from_gene2ensembl]['data']['gene2ensembl'].append(ncbi_gene_id_from_gene2ensembl)
+            if ensembl_gene_id_from_gene2ensembl in ensembl_dict:
+                ensembl_dict[ensembl_gene_id_from_gene2ensembl]['data']['gene2ensembl'].append(ncbi_gene_id_from_gene2ensembl)
 
     return ensembl_dict
 
@@ -92,7 +92,6 @@ def write_mapping_ids_to_file(ensembl_dict):
     ID from the NCBI multi mapping list returns the same ensembl symbol as the
     ensembl main file, and use corresponding NCBI gene ID as single match.
     """
-    mg = mygene.MyGeneInfo()
 
     final_mapping_file = open("final_mapping_file.txt", "w")
     ncbi_list_for_mygene_querymany = []
@@ -114,6 +113,8 @@ def write_mapping_ids_to_file(ensembl_dict):
 
     # no need to have duplicates because mygene.info returns one symbol
     ncbi_list_for_mygene_querymany = list(set(ncbi_list_for_mygene_querymany))
+
+    mg = mygene.MyGeneInfo()
     ensembl_symbol_list_from_mygene = mg.querymany(ncbi_list_for_mygene_querymany, scopes='entrezgene', species="all", fields="symbol")
 
     mygene_website_dict = {}
