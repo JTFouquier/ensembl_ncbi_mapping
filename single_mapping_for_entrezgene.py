@@ -123,8 +123,10 @@ def write_mapping_ids_to_file(ensembl_dict):
     ncbi_list_for_mygene_querymany = list(set(ncbi_list_for_mygene_querymany))
 
     mg = mygene.MyGeneInfo()
-    ensembl_symbol_list_from_mygene = mg.querymany(ncbi_list_for_mygene_querymany, scopes='entrezgene', species="all", fields="symbol")
+    # This returns a list of dictionaries from mygene.info.
+    ensembl_symbol_list_from_mygene = mg.querymany(ncbi_list_for_mygene_querymany, scopes='entrezgene', species="all", fields="symbol", verbose=False)
 
+    # we want a dictionary full of the query IDs for easy accessing
     mygene_website_dict = {}
     for dic in ensembl_symbol_list_from_mygene:
         try:
