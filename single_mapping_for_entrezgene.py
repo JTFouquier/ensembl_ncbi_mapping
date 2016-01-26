@@ -98,13 +98,12 @@ def write_mapping_ids_to_file(ensembl_dict):
     col1: NCBI ID gene ID from gene2ensembl
     col2: NCBI ID gene ID from ncbi_list if mygene.info symbol == ensembl symbol
         (i.e. iterate through ncbi list (for each Ensembl ID) on mygene.info
-        ( http://mygene.info/v2/gene/100894237?fields=symbol )
+        (ex: http://mygene.info/v2/gene/100894237?fields=symbol )
         and when the symbol found matches the ensembl symbol use this
         NCBI ID if symbols match only once)
     """
     final_mapping_file = open("final_mapping_file.txt", "w")
     ncbi_list_for_mygene_querymany = []
-    ncbi_list_for_mygene_querymany2 = []
 
     for key in ensembl_dict:
         ncbi_list = ensembl_dict[key]['data']['ncbi_list']
