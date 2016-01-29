@@ -4,6 +4,11 @@ from collections import defaultdict
 import mygene
 
 
+gene_ensembl_1_xref_dm_file = "gene_ensembl__xref_entrezgene__dm.txt"
+gene_ensembl_2_main_file = "gene_ensembl__gene__main.txt"
+gene2ensembl_file = "gene2ensembl"
+
+
 def find_multiple_mappings_from_entrezgene_file(gene_ensembl_entrezgene_dm_file):
     """Input gene_ensembl_entrezgene_dm_file, and identify how many NCBI gene IDs there are for
     each ensembl gene ID. Lines in input file are:
@@ -153,8 +158,10 @@ def write_mapping_ids_to_file(ensembl_dict):
     final_mapping_file.close()
 
 
-# Call all the functions above in order:
-multi_mapping_dict = find_multiple_mappings_from_entrezgene_file("gene_ensembl__xref_entrezgene__dm.txt")
-ensembl_dict = create_ensembl_gene_id_dict("gene_ensembl__gene__main.txt", multi_mapping_dict)
-ensembl_dict_appended = find_ncbi_ids_from_gene2ensembl(ensembl_dict, "gene2ensembl")
-write_mapping_ids_to_file(ensembl_dict_appended)
+def main(gene_ensembl_1, gene_ensembl_2, gene2ensembl):
+    multi_mapping_dict = find_multiple_mappings_from_entrezgene_file(gene_ensembl_1)
+    ensembl_dict = create_ensembl_gene_id_dict(gene_ensembl_2, multi_mapping_dict)
+    ensembl_dict_appended = find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl)
+    write_mapping_ids_to_file(ensembl_dict_appended)
+
+main(gene_ensembl_1_xref_dm_file, gene_ensembl_2_main_file, gene2ensembl_file)
