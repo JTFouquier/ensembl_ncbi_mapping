@@ -1,11 +1,7 @@
 
-import ast
-import collections
+from collections import defaultdict
 
 import mygene
-
-from collections import defaultdict
-from collections import Counter
 
 
 def find_multiple_mappings_from_entrezgene_file(gene_ensembl_entrezgene_dm_file):
@@ -36,6 +32,7 @@ def find_multiple_mappings_from_entrezgene_file(gene_ensembl_entrezgene_dm_file)
 
     return multi_mapping_dict
 
+
 def create_ensembl_gene_id_dict(gene_ensembl_main_file, multi_mapping_dict):
     """Using gene_ensembl_main_file, identify correct ensembl symbol for each
     ensembl gene ID. Add this information to a new dictionary.
@@ -46,7 +43,6 @@ def create_ensembl_gene_id_dict(gene_ensembl_main_file, multi_mapping_dict):
     col2: Ensembl symbol
     """
     ensembl_dict = defaultdict(list)
-    symbol_file_list = []
     with open(gene_ensembl_main_file) as file_in:
         next(file_in)
         for line in file_in:
@@ -58,7 +54,7 @@ def create_ensembl_gene_id_dict(gene_ensembl_main_file, multi_mapping_dict):
                 ensembl_id_dict = {}
                 ensembl_id_dict['data'] = {'ncbi_list': multi_mapping_dict[ensembl_id_from_main],
                                            'symbol': ensembl_symbol_from_main,
-                                           'gene2ensembl': [] }
+                                           'gene2ensembl': []}
                 ensembl_dict[ensembl_id_from_main] = ensembl_id_dict
 
     return ensembl_dict
@@ -132,7 +128,7 @@ def write_mapping_ids_to_file(ensembl_dict):
         try:
             mygene_website_dict[dic['query']] = dic['symbol']
         except:
-            #if there is no symbol for the query, just don't add it to mygene_website_dict
+            # if there is no symbol for the query, just don't add it to mygene_website_dict
             pass
 
     for key in ensembl_dict:
