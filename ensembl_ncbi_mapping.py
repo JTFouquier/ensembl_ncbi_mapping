@@ -87,7 +87,36 @@ def find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl_file):
     return ensembl_dict
 
 
-def write_mapping_ids_to_file(ensembl_dict):
+def query_mygene_website(ensembl_dict):
+    """If the length of the ncbi match list from gene2ensembl is not one, then
+    query mygene.info website.
+    """
+    ncbi_list_for_mygene_querymany = []
+    for key in ensembl_dict:
+        ncbi_list = ensembl_dict[key]['data']['ncbi_list']
+        gene2ensembl_ncbi_gene_id_match_list = ensembl_dict[key]['data']['gene2ensembl']
+        ncbi_list_for_mygene_querymany.append(ncbi_list)
+        if len(gene2ensembl_ncbi_gene_id_match_list) != 1:
+            ncbi_list_for_mygene_querymany.append(ncbi_list)
+
+    ncbi_list_for_mygene_querymany = list(set([item for sublist in ncbi_list_for_mygene_querymany for item in sublist]))
+
+    # This returns a list of dictionaries from mygene.info.
+    ensembl_symbol_list_from_mygene = mygene.MyGeneInfo().querymany(ncbi_list_for_mygene_querymany,
+                                                                    scopes='entrezgene', species="all",
+                                                                    fields="symbol", verbose=False)
+    mygene_website_dict = {}
+    for dic in ensembl_symbol_list_from_mygene:
+        try:
+            mygene_website_dict[dic['query']] = dic['symbol']
+        except:
+            # if there is no symbol for the query, just don't add it to mygene_website_dict
+            pass
+
+    return mygene_website_dict
+
+
+def write_mapping_file(ensembl_dict, mygene_website_dict):
     """First use gene2ensembl as single match NCBI gene ID (if == 1 match).
     Next, if no gene2ensembl match, then look at mygene.info to find which NCBI
     ID from the NCBI multi mapping list returns the same ensembl symbol as the
@@ -104,44 +133,17 @@ def write_mapping_ids_to_file(ensembl_dict):
         NCBI ID if symbols match only once)
     """
     final_mapping_file = open("final_mapping_file.txt", "w")
-    ncbi_list_for_mygene_querymany = []
 
     for key in ensembl_dict:
         ncbi_list = ensembl_dict[key]['data']['ncbi_list']
         ensembl_symbol = ensembl_dict[key]['data']['symbol'].upper()
         gene2ensembl_ncbi_gene_id_match_list = ensembl_dict[key]['data']['gene2ensembl']
-        ncbi_list_for_mygene_querymany.append(ncbi_list)
+
         if len(gene2ensembl_ncbi_gene_id_match_list) == 1:
             final_mapping_file.write(key + '\t')
             final_mapping_file.write(gene2ensembl_ncbi_gene_id_match_list[0] + '\n')
+
         else:
-            # only append list if need to query mygene.info
-            ncbi_list_for_mygene_querymany.append(ncbi_list)
-
-    ncbi_list_for_mygene_querymany = [item for sublist in ncbi_list_for_mygene_querymany for item in sublist]
-
-    # no need to have duplicates because mygene.info returns one symbol
-    ncbi_list_for_mygene_querymany = list(set(ncbi_list_for_mygene_querymany))
-
-    mg = mygene.MyGeneInfo()
-    # This returns a list of dictionaries from mygene.info.
-    ensembl_symbol_list_from_mygene = mg.querymany(ncbi_list_for_mygene_querymany, scopes='entrezgene', species="all", fields="symbol", verbose=False)
-
-    # we want a dictionary full of the query IDs for easy accessing
-    mygene_website_dict = {}
-    for dic in ensembl_symbol_list_from_mygene:
-        try:
-            mygene_website_dict[dic['query']] = dic['symbol']
-        except:
-            # if there is no symbol for the query, just don't add it to mygene_website_dict
-            pass
-
-    for key in ensembl_dict:
-        ncbi_list = ensembl_dict[key]['data']['ncbi_list']
-        ensembl_symbol = ensembl_dict[key]['data']['symbol'].upper()
-        gene2ensembl_ncbi_gene_id_match_list = ensembl_dict[key]['data']['gene2ensembl']
-        if len(gene2ensembl_ncbi_gene_id_match_list) != 1:
-
             ensembl_symbol_list_from_mygene = []
             for ncbi_id in ncbi_list:
                 try:
@@ -162,6 +164,7 @@ def main(gene_ensembl_1, gene_ensembl_2, gene2ensembl):
     multi_mapping_dict = find_multiple_mappings_from_entrezgene_file(gene_ensembl_1)
     ensembl_dict = create_ensembl_gene_id_dict(gene_ensembl_2, multi_mapping_dict)
     ensembl_dict_appended = find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl)
-    write_mapping_ids_to_file(ensembl_dict_appended)
+    mygene_website_dict = query_mygene_website(ensembl_dict_appended)
+    write_mapping_file(ensembl_dict_appended, mygene_website_dict)
 
 main(gene_ensembl_1_xref_dm_file, gene_ensembl_2_main_file, gene2ensembl_file)
