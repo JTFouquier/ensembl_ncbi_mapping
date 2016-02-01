@@ -122,7 +122,7 @@ def write_mapping_file_and_create_generator_list(ensembl_dict, mygene_website_di
     ID from the NCBI multi mapping list returns the same ensembl symbol as the
     ensembl main file, and use corresponding NCBI gene ID as single match.
 
-    OUTPUT (is mapping file):
+    OUTPUT 1 (is mapping file):
     -------------------------
     col0: Ensembl gene ID
     col1: NCBI ID gene ID from gene2ensembl
@@ -131,6 +131,10 @@ def write_mapping_file_and_create_generator_list(ensembl_dict, mygene_website_di
         (ex: http://mygene.info/v2/gene/100894237?fields=symbol )
         and when the symbol found matches the ensembl symbol use this
         NCBI ID if symbols match only once)
+
+    OUTPUT 2 (generator):
+    ---------------------
+    Tuple with ensembl gene ID and NCBI gene ID
     """
     final_mapping_file = open("final_mapping_file.txt", "w")
 
