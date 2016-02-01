@@ -110,43 +110,31 @@ def query_mygene_website(ensembl_dict):
         try:
             mygene_website_dict[dic['query']] = dic['symbol']
         except:
-            # if there is no symbol for the query, just don't add it to mygene_website_dict
-            pass
+            KeyError
 
     return mygene_website_dict
 
 
-def write_mapping_file_and_create_generator_list(ensembl_dict, mygene_website_dict):
+def merge_mapping(ensembl_dict, mygene_website_dict, add_source=False):
     """First use gene2ensembl as single match NCBI gene ID (if == 1 match).
     Next, if no gene2ensembl match, then look at mygene.info to find which NCBI
     ID from the NCBI multi mapping list returns the same ensembl symbol as the
     ensembl main file, and use corresponding NCBI gene ID as single match.
 
-    OUTPUT 1 (is mapping file):
-    -------------------------
-    col0: Ensembl gene ID
-    col1: NCBI ID gene ID from gene2ensembl
-    col2: NCBI ID gene ID from ncbi_list if mygene.info symbol == ensembl symbol
-        (i.e. iterate through ncbi list (for each Ensembl ID) on mygene.info
-        (ex: http://mygene.info/v2/gene/100894237?fields=symbol )
-        and when the symbol found matches the ensembl symbol use this
-        NCBI ID if symbols match only once)
-
-    OUTPUT 2 (generator):
+    OUTPUT generator:
     ---------------------
     Tuple with ensembl gene ID and NCBI gene ID
     """
-    final_mapping_file = open("final_mapping_file.txt", "w")
-
     for key in ensembl_dict:
         ncbi_list = ensembl_dict[key]['data']['ncbi_list']
         ensembl_symbol = ensembl_dict[key]['data']['symbol'].upper()
         gene2ensembl_ncbi_gene_id_match_list = ensembl_dict[key]['data']['gene2ensembl']
 
         if len(gene2ensembl_ncbi_gene_id_match_list) == 1:
-            final_mapping_file.write(key + '\t')
-            final_mapping_file.write(gene2ensembl_ncbi_gene_id_match_list[0] + '\n')
-            yield (key, gene2ensembl_ncbi_gene_id_match_list[0])
+            if add_source is False:
+                yield (key, gene2ensembl_ncbi_gene_id_match_list[0])
+            else:
+                yield (key, gene2ensembl_ncbi_gene_id_match_list[0], '1')
 
         else:
             ensembl_symbol_list_from_mygene = []
@@ -159,11 +147,32 @@ def write_mapping_file_and_create_generator_list(ensembl_dict, mygene_website_di
 
             if ensembl_symbol in ensembl_symbol_list_from_mygene:
                 if ensembl_symbol_list_from_mygene.count(ensembl_symbol) == 1:
-                    final_mapping_file.write(key + '\t')
                     ncbi_idx = ensembl_symbol_list_from_mygene.index(ensembl_symbol)
-                    final_mapping_file.write('\t' + ncbi_list[ncbi_idx] + '\n')
-                    yield (key, ncbi_list[ncbi_idx])
-    final_mapping_file.close()
+                    if add_source is False:
+                        yield (key, ncbi_list[ncbi_idx])
+                    else:
+                        yield (key, ncbi_list[ncbi_idx], '2')
+
+
+def write_mapping_file(mapping_generator):
+    """OUTPUT is mapping file:
+    -------------------------
+    Note: you will not know the source of the mapping unless you use
+    the optional parameter "add_source=True" to merge_mapping() function
+    col0: Ensembl gene ID
+    col2 "add_source" == 1: NCBI ID gene ID from gene2ensembl
+    col2 "add_source" == 2: NCBI ID gene ID from ncbi_list if mygene.info symbol == ensembl symbol
+        (i.e. iterate through ncbi list (for each Ensembl ID) on mygene.info
+        (ex: http://mygene.info/v2/gene/100894237?fields=symbol )
+        and when the symbol found matches the ensembl symbol use this
+        NCBI ID if symbols match only once)
+    """
+    mapping_file = open("final_mapping_file.txt", "w")
+    for item in mapping_generator:
+        split_item = '\t'.join(item)
+        mapping_file.write(split_item + "\n")
+
+    mapping_file.close()
 
 
 def main(gene_ensembl_1, gene_ensembl_2, gene2ensembl):
@@ -171,6 +180,8 @@ def main(gene_ensembl_1, gene_ensembl_2, gene2ensembl):
     ensembl_dict = create_ensembl_gene_id_dict(gene_ensembl_2, multi_mapping_dict)
     ensembl_dict = find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl)
     mygene_website_dict = query_mygene_website(ensembl_dict)
-    ensembl_ncbi_mapping_list = list(write_mapping_file_and_create_generator_list(ensembl_dict, mygene_website_dict))
+    mapping_generator = merge_mapping(ensembl_dict, mygene_website_dict, add_source=False)
+    write_mapping_file(mapping_generator)
+
 
 main(gene_ensembl_1_xref_dm_file, gene_ensembl_2_main_file, gene2ensembl_file)
