@@ -116,7 +116,7 @@ def query_mygene_website(ensembl_dict):
     return mygene_website_dict
 
 
-def write_mapping_file(ensembl_dict, mygene_website_dict):
+def write_mapping_file_and_create_generator_list(ensembl_dict, mygene_website_dict):
     """First use gene2ensembl as single match NCBI gene ID (if == 1 match).
     Next, if no gene2ensembl match, then look at mygene.info to find which NCBI
     ID from the NCBI multi mapping list returns the same ensembl symbol as the
@@ -142,6 +142,7 @@ def write_mapping_file(ensembl_dict, mygene_website_dict):
         if len(gene2ensembl_ncbi_gene_id_match_list) == 1:
             final_mapping_file.write(key + '\t')
             final_mapping_file.write(gene2ensembl_ncbi_gene_id_match_list[0] + '\n')
+            yield (key, gene2ensembl_ncbi_gene_id_match_list[0])
 
         else:
             ensembl_symbol_list_from_mygene = []
@@ -157,14 +158,15 @@ def write_mapping_file(ensembl_dict, mygene_website_dict):
                     final_mapping_file.write(key + '\t')
                     ncbi_idx = ensembl_symbol_list_from_mygene.index(ensembl_symbol)
                     final_mapping_file.write('\t' + ncbi_list[ncbi_idx] + '\n')
+                    yield (key, ncbi_list[ncbi_idx])
     final_mapping_file.close()
 
 
 def main(gene_ensembl_1, gene_ensembl_2, gene2ensembl):
     multi_mapping_dict = find_multiple_mappings_from_entrezgene_file(gene_ensembl_1)
     ensembl_dict = create_ensembl_gene_id_dict(gene_ensembl_2, multi_mapping_dict)
-    ensembl_dict_appended = find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl)
-    mygene_website_dict = query_mygene_website(ensembl_dict_appended)
-    write_mapping_file(ensembl_dict_appended, mygene_website_dict)
+    ensembl_dict = find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl)
+    mygene_website_dict = query_mygene_website(ensembl_dict)
+    ensembl_ncbi_mapping_list = list(write_mapping_file_and_create_generator_list(ensembl_dict, mygene_website_dict))
 
 main(gene_ensembl_1_xref_dm_file, gene_ensembl_2_main_file, gene2ensembl_file)
