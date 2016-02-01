@@ -109,8 +109,8 @@ def query_mygene_website(ensembl_dict):
     for dic in ensembl_symbol_list_from_mygene:
         try:
             mygene_website_dict[dic['query']] = dic['symbol']
-        except:
-            KeyError
+        except KeyError:
+            pass
 
     return mygene_website_dict
 
@@ -141,7 +141,7 @@ def merge_mapping(ensembl_dict, mygene_website_dict, add_source=False):
             for ncbi_id in ncbi_list:
                 try:
                     ensembl_symbol_list_from_mygene.append(mygene_website_dict[ncbi_id].upper())
-                except:
+                except KeyError:
                     # need this here; keeps list size/order will never match with ensembl_symbol)
                     ensembl_symbol_list_from_mygene.append('symbol_not_found')
 
