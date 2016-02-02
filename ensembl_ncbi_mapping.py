@@ -20,6 +20,8 @@ def find_multiple_mappings_from_entrezgene_file(gene_ensembl_entrezgene_dm_file)
 
     If there is > 1 NCBI gene ID, we need to process further.
     """
+    print("ensembl_ncbi_mapping.py script is running now...")
+    print("step 1 start: find where multiple NCBI IDs map to one Ensembl ID")
     ensembl_dict_from_entrez = defaultdict(list)
 
     with open(gene_ensembl_entrezgene_dm_file) as file_in:
@@ -30,12 +32,14 @@ def find_multiple_mappings_from_entrezgene_file(gene_ensembl_entrezgene_dm_file)
             ncbi_gene_id_from_entrez = split_line[2].strip()
             ensembl_dict_from_entrez[ensembl_gene_id_from_entrez].append(ncbi_gene_id_from_entrez)
 
+    print("number of Ensembl gene IDs from Entrez: ", len(ensembl_dict_from_entrez))
     multi_mapping_dict = {}
     for key in ensembl_dict_from_entrez:
         if len(ensembl_dict_from_entrez[key]) > 1:
             multi_mapping_dict[key] = ensembl_dict_from_entrez[key]
-
-    return multi_mapping_dict
+    print("number of Ensembl IDs with > 1 NCBI gene ID: ", len(multi_mapping_dict))
+    print("step 1 end")
+    return multi_mapping_dict, len(ensembl_dict_from_entrez)
 
 
 def create_ensembl_gene_id_dict(gene_ensembl_main_file, multi_mapping_dict):
@@ -47,6 +51,7 @@ def create_ensembl_gene_id_dict(gene_ensembl_main_file, multi_mapping_dict):
     col1: Ensembl gene ID
     col2: Ensembl symbol
     """
+    print("step 2 start: get Ensembl symbol from Ensembl main file")
     ensembl_dict = defaultdict(list)
     with open(gene_ensembl_main_file) as file_in:
         next(file_in)
@@ -61,21 +66,21 @@ def create_ensembl_gene_id_dict(gene_ensembl_main_file, multi_mapping_dict):
                                            'symbol': ensembl_symbol_from_main,
                                            'gene2ensembl': []}
                 ensembl_dict[ensembl_id_from_main] = ensembl_id_dict
-
+    print("step 2 end")
     return ensembl_dict
 
 
 def find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl_file):
-    """Input is gene2ensembl_file; maps one NCBI gene ID to one Ensembl gene ID.
+    """Input is gene2ensembl_file; maps NCBI gene ID to one Ensembl gene ID.
 
     'gene2ensembl' (useful columns in input file):
 
     col1: NCBI gene ID
     col2: Ensembl gene ID
     """
+    print("step 3 start: find NCBI IDs from gene2ensembl file")
     with open(gene2ensembl_file) as file_in:
         next(file_in)
-
         for line in file_in:
             split_line = line.split("\t")
             ensembl_gene_id_from_gene2ensembl = split_line[2].strip()
@@ -84,13 +89,21 @@ def find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl_file):
             if ensembl_gene_id_from_gene2ensembl in ensembl_dict:
                 ensembl_dict[ensembl_gene_id_from_gene2ensembl]['data']['gene2ensembl'].append(ncbi_gene_id_from_gene2ensembl)
 
-    return ensembl_dict
+    count = 0
+    for key in ensembl_dict:
+        if len(ensembl_dict[key]['data']['gene2ensembl']) == 1:
+            count += 1
+
+    print("Total number of Ensembl gene IDs mapping uniquely with gene2ensembl: ", count)
+    print("step 3 end")
+    return ensembl_dict, count
 
 
 def query_mygene_website(ensembl_dict):
     """If the length of the ncbi match list from gene2ensembl is not one, then
     query mygene.info website.
     """
+    print("step 4 start: use querymany to access mygene.info for Ensembl symbol")
     ncbi_list_for_mygene_querymany = []
     for key in ensembl_dict:
         ncbi_list = ensembl_dict[key]['data']['ncbi_list']
@@ -112,6 +125,9 @@ def query_mygene_website(ensembl_dict):
         except KeyError:
             pass
 
+    print("number of unique NCBI gene IDs to be queried using mygene.info: ", len(ncbi_list_for_mygene_querymany))
+    print("number symbols found from querying mygene.info: ", len(mygene_website_dict))
+    print("step 4 end")
     return mygene_website_dict
 
 
@@ -125,6 +141,7 @@ def merge_mapping(ensembl_dict, mygene_website_dict, add_source=False):
     ---------------------
     Tuple with ensembl gene ID and NCBI gene ID
     """
+    print("step 5 start: Generator-decide whether to use gene2ensembl or mygene.info for mapping")
     for key in ensembl_dict:
         ncbi_list = ensembl_dict[key]['data']['ncbi_list']
         ensembl_symbol = ensembl_dict[key]['data']['symbol'].upper()
@@ -153,6 +170,8 @@ def merge_mapping(ensembl_dict, mygene_website_dict, add_source=False):
                     else:
                         yield (key, ncbi_list[ncbi_idx], '2')
 
+    print("step 5 end")
+
 
 def write_mapping_file(mapping_generator):
     """OUTPUT is mapping file:
@@ -167,21 +186,41 @@ def write_mapping_file(mapping_generator):
         and when the symbol found matches the ensembl symbol use this
         NCBI ID if symbols match only once)
     """
+    print("step 6 start: write file from mapping generator of tuples")
     mapping_file = open("final_mapping_file.txt", "w")
+
+    count = 0
     for item in mapping_generator:
+        count += 1
         split_item = '\t'.join(item)
         mapping_file.write(split_item + "\n")
 
+    print("total Ensembl IDs uniquely mapped to NCBI gene ID:", count)
     mapping_file.close()
+    print("step 6 end\n")
+    return count
+
+
+def run_stats(total_ensembl_IDs, ensembl_dict, ensembl_map_count, total_mapped):
+    print("Final Summary:")
+    print("--------------")
+    print("Total Ensembl gene IDs", total_ensembl_IDs)
+    print("Total Ensembl gene IDs with multiple NCBI gene IDs: ", len(ensembl_dict))
+    print("Percent of Ensembl gene IDs with multiple NCBI gene IDs: ", round((len(ensembl_dict)/(total_ensembl_IDs))*100, 1))
+    print("Total Ensembl gene IDs successfully and uniquely mapped to 1 NCBI gene ID: ", total_mapped)
+    print("Total mapped using gene2ensembl: ", ensembl_map_count)
+    print("Total mapped from mygene.info: ", total_mapped-ensembl_map_count)
+    print("Percent of Ensembl IDs uniquely mapped out of Ensembl IDs with > 1 NCBI gene ID: ", round((total_mapped/(len(ensembl_dict)))*100, 1))
 
 
 def main(gene_ensembl_1, gene_ensembl_2, gene2ensembl):
-    multi_mapping_dict = find_multiple_mappings_from_entrezgene_file(gene_ensembl_1)
+    multi_mapping_dict, total_ensembl_IDs = find_multiple_mappings_from_entrezgene_file(gene_ensembl_1)
     ensembl_dict = create_ensembl_gene_id_dict(gene_ensembl_2, multi_mapping_dict)
-    ensembl_dict = find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl)
+    ensembl_dict, ensembl_match_count = find_ncbi_ids_from_gene2ensembl(ensembl_dict, gene2ensembl)
     mygene_website_dict = query_mygene_website(ensembl_dict)
     mapping_generator = merge_mapping(ensembl_dict, mygene_website_dict, add_source=False)
-    write_mapping_file(mapping_generator)
+    total_mapped = write_mapping_file(mapping_generator)
+    run_stats(total_ensembl_IDs, ensembl_dict, ensembl_match_count, total_mapped)
 
 
 main(gene_ensembl_1_xref_dm_file, gene_ensembl_2_main_file, gene2ensembl_file)
