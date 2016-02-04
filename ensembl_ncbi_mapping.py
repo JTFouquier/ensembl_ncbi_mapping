@@ -149,9 +149,9 @@ def merge_mapping(ensembl_dict, mygene_website_dict, add_source=False):
 
         if len(gene2ensembl_ncbi_gene_id_match_list) == 1:
             if add_source is False:
-                yield (key, gene2ensembl_ncbi_gene_id_match_list[0])
+                yield (key, int(gene2ensembl_ncbi_gene_id_match_list[0]))
             else:
-                yield (key, gene2ensembl_ncbi_gene_id_match_list[0], '1')
+                yield (key, int(gene2ensembl_ncbi_gene_id_match_list[0]), '1')
 
         else:
             ensembl_symbol_list_from_mygene = []
@@ -166,9 +166,9 @@ def merge_mapping(ensembl_dict, mygene_website_dict, add_source=False):
                 if ensembl_symbol_list_from_mygene.count(ensembl_symbol) == 1:
                     ncbi_idx = ensembl_symbol_list_from_mygene.index(ensembl_symbol)
                     if add_source is False:
-                        yield (key, ncbi_list[ncbi_idx])
+                        yield (key, int(ncbi_list[ncbi_idx]))
                     else:
-                        yield (key, ncbi_list[ncbi_idx], '2')
+                        yield (key, int(ncbi_list[ncbi_idx]), '2')
 
     print("step 5 end")
 
@@ -192,7 +192,8 @@ def write_mapping_file(mapping_generator):
     count = 0
     for item in mapping_generator:
         count += 1
-        split_item = '\t'.join(item)
+        split_item = list(item)
+        split_item = '\t'.join([str(i) for i in split_item])
         mapping_file.write(split_item + "\n")
 
     print("total Ensembl IDs uniquely mapped to NCBI gene ID:", count)
@@ -222,5 +223,5 @@ def main(gene_ensembl_1, gene_ensembl_2, gene2ensembl):
     total_mapped = write_mapping_file(mapping_generator)
     run_stats(total_ensembl_IDs, ensembl_dict, ensembl_match_count, total_mapped)
 
-
-main(gene_ensembl_1_xref_dm_file, gene_ensembl_2_main_file, gene2ensembl_file)
+# use this for testing purposes:
+# main(gene_ensembl_1_xref_dm_file, gene_ensembl_2_main_file, gene2ensembl_file)
